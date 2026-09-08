@@ -2,22 +2,22 @@
 
 ## 1. 项目目标
 
-建立一个独立、版本化的 Node.js 工具仓库（暂定名：`snowsy-devkit`），统一各业务仓库的本地开发、预发布和生产 Docker 运行脚本。
+建立一个独立、版本化的 Go CLI 工具仓库（暂定命令：`snowsy`），统一各业务仓库的本地开发、预发布和生产 Docker 运行脚本。
 
 目标是让业务仓库以少量配置声明自身差异，同时提供一致的命令体验：
 
 ```bash
-npm run dev
-npm run stag
-npm run prod
-npm run down
-npm run logs
-npm run ps
-npm run build
-npm run test
+snowsy up dev
+snowsy up stag
+snowsy up prod
+snowsy down dev
+snowsy logs dev
+snowsy ps dev
+snowsy build dev
+snowsy task test
 ```
 
-本项目不统一业务技术栈、Dockerfile、Compose 服务名、端口或部署平台；只统一它们的开发运行接口和可复用实现。
+本项目不统一业务技术栈、Dockerfile、Compose 服务名、端口或部署平台；只统一它们的开发运行接口和可复用实现。各业务仓库通过 `snowsy.json` 声明差异，并可用 `snowsy.lua` 实现少量专属 hook。
 
 ## 2. 当前范围
 
@@ -38,13 +38,15 @@ npm run test
 
 ## 3. 设计原则
 
-1. **配置优于复制。** 业务仓库提供 `devkit.config.mjs`，不再复制通用 Node 脚本。
-2. **核心保持技术栈无关。** Core 只认识命令、环境、进程和 Docker Compose；Spring、WordPress、Go 等由适配器处理。
-3. **保留业务特例。** 初始化、健康检查、E2E 联调等通过 hooks/adapter 扩展，不进入通用 Compose 流程。
-4. **跨平台优先。** 支持 Windows 与 Linux；集中处理 `docker`/`docker.exe`、子进程与退出码。
-5. **安全且可预测。** 不自动删除 volume，不覆盖本地配置；破坏性动作必须由显式参数触发。
-6. **渐进迁移。** 每次只迁一个仓库；新旧入口可并存，验证后再删除旧脚本。
-7. **可版本化回滚。** 母仓库作为私有 npm 包发布，消费方锁定明确版本。
+1. **配置优于复制。** 业务仓库提供 `snowsy.json`，不再复制通用 Node 脚本。
+2. **单文件分发。** CLI 由 Go 构建为 Windows/Linux/macOS 二进制，通过 GitHub Release 或内部制品库分发；不依赖私有 npm registry。
+3. **核心保持技术栈无关。** Core 只认识命令、环境、进程和 Docker Compose；Spring、WordPress、Go 等由适配器处理。
+4. **保留业务特例。** 初始化、健康检查、E2E 联调等通过 adapter 或 Lua hook 扩展，不进入通用 Compose 流程。
+5. **跨平台优先。** 支持 Windows 与 Linux；集中处理 `docker`/`docker.exe`、子进程与退出码。
+6. **安全且可预测。** 不自动删除 volume，不覆盖本地配置；破坏性动作必须由显式参数触发。
+7. **渐进迁移。** 每次只迁一个仓库；新旧入口可并存，验证后再删除旧脚本。
+8. **可版本化回滚。** 每个仓库在配置中声明最低兼容版本；开发机和 CI 固定使用明确的 CLI release 版本。
+9. **Lua 只作逃生口。** 常规生命周期必须由 JSON 声明；Lua 只允许实现 hook 和受限扩展，避免重新形成散乱脚本体系。
 
 ## 4. 命令契约
 
@@ -58,6 +60,7 @@ npm run test
 | `ps <env>` | 查看服务状态 |
 | `build <env>` | 构建该环境所需镜像或产物 |
 | `task <name> [-- ...args]` | 在宿主机或指定容器执行 lint、test、format、CLI 等任务 |
+| `doctor` | 检查 CLI 版本、Docker/Compose、端口、配置和所需运行时 |
 
 ### 统一参数语义
 
@@ -93,60 +96,60 @@ npm run test
 ## 5. 目标架构
 
 ```text
-业务仓库 package.json
+业务仓库 package.json（可选兼容入口）
         |
         v
-snowsy-runtime CLI
+snowsy CLI（Go binary，位于 PATH 或 CI 工具缓存）
         |
-        +-- runtime-core       参数解析、环境加载、子进程、日志、错误
-        +-- compose-runtime    compose 文件、profile、project name、up/down/build
+        +-- core               参数解析、环境加载、子进程、日志、错误
+        +-- compose            compose 文件、profile、project name、up/down/build
         +-- adapters           spring-local / compose-service / compose-task
-        +-- hooks              beforeUp / afterUp / beforeDown / afterDown
+        +-- hooks              beforeUp / afterUp / beforeDown / afterDown（Lua）
         |
         v
-业务仓库 devkit.config.mjs + docker/compose*.yml
+业务仓库 snowsy.json + 可选 snowsy.lua + docker/compose*.yml
 ```
 
 建议包划分：
 
 ```text
-packages/
-  runtime-core/       # 不依赖 Docker 的通用能力
-  compose-runtime/    # Docker Compose 实现
-  runtime-cli/        # snowsy-runtime 命令行入口
-  adapter-spring/     # Maven、本地 JVM、基础设施健康检查
-templates/
-  compose-service/
-  spring-service/
-  compose-task/
+cmd/snowsy/           # CLI 入口
+internal/core/        # 参数、环境、进程、日志、错误
+internal/compose/     # Docker Compose 实现
+internal/adapters/    # Spring、本地服务、容器服务、容器任务
+internal/hooks/       # Lua hook 运行时与受限 API
+schemas/              # snowsy.json JSON Schema
+templates/            # 各类项目配置模板
 ```
 
-首期可先用单 npm package 实现以上目录边界；稳定后再按需要拆包。
+首期构建单一 CLI 二进制；稳定后仍以单一 CLI 对外发布，内部按 Go package 保持边界。
 
 ## 6. 业务配置模型（草案）
 
 ```js
-export default {
-  project: "qx-web-v4-backend",
-  compose: {
-    file: "docker/compose.yml",
-    projectName: "qx-web-v4-backend-{mode}",
+{
+  "schemaVersion": 1,
+  "requires": { "snowsy": ">=0.1.0 <0.2.0" },
+  "project": "qx-web-v4-backend",
+  "compose": {
+    "file": "docker/compose.yml",
+    "projectName": "qx-web-v4-backend-{mode}"
   },
-  envFiles: [".env", ".env.local", ".env.{mode}", ".env.{mode}.local"],
-  environments: {
-    dev: {
-      adapter: "spring-local",
-      profile: "dev",
-      infrastructure: ["postgres", "pgadmin"],
-      foreground: true,
+  "envFiles": [".env", ".env.local", ".env.{mode}", ".env.{mode}.local"],
+  "environments": {
+    "dev": {
+      "adapter": "spring-local",
+      "profile": "dev",
+      "infrastructure": ["postgres", "pgadmin"],
+      "foreground": true
     },
-    stag: { adapter: "compose-service", profile: "stag", services: ["app-stag"] },
-    prod: { adapter: "compose-service", profile: "prod", services: ["app-prod"] },
+    "stag": { "adapter": "compose-service", "profile": "stag", "services": ["app-stag"] },
+    "prod": { "adapter": "compose-service", "profile": "prod", "services": ["app-prod"] }
   },
-  tasks: {
-    test: { adapter: "compose-task", profile: "test", service: "app-test", command: ["npm", "test"] },
-  },
-};
+  "tasks": {
+    "test": { "adapter": "compose-task", "profile": "test", "service": "app-test", "command": ["npm", "test"] }
+  }
+}
 ```
 
 环境变量加载顺序待实现时固化为：系统环境变量最高；之后由低到高依次为 `.env`、`.env.{mode}`、`.env.local`、`.env.{mode}.local`。不得覆盖已存在的系统环境变量。
@@ -155,7 +158,7 @@ export default {
 
 ### Phase 0：规范冻结与样本确认
 
-- [ ] 确认工具包名称、私有 npm 发布位置和 Node.js 最低版本。
+- [ ] 确认命令名称、GitHub Release 或内部制品库发布位置，以及 Go 最低版本。
 - [ ] 确认基础命令与参数语义，以本文件第 4 节为候选契约。
 - [ ] 确认 Compose project name 命名规则：`{project}-{mode}`。
 - [ ] 定义 secrets、本地环境文件、示例配置文件的命名与优先级。
@@ -165,13 +168,13 @@ export default {
 
 ### Phase 1：母仓库 MVP
 
-- [ ] 初始化 npm workspace、ESM、Prettier、测试框架和 CI。
+- [ ] 初始化 Go module、代码格式化、测试框架和 CI。
 - [ ] 实现 CLI 参数解析、标准日志、退出码透传和跨平台 Docker 命令检测。
 - [ ] 实现环境文件加载与变量插值。
 - [ ] 实现 Compose `up/down/build/logs/ps/run`。
 - [ ] 实现 profile、service、project name、foreground/detach 支持。
 - [ ] 为无 Docker、缺少 Compose 文件、非法环境、Docker 失败等场景添加测试。
-- [ ] 提供 `compose-service` 模板与示例仓库配置。
+- [ ] 提供 `compose-service` 模板、JSON Schema 与示例仓库配置。
 
 验收：一个最小 Compose 服务能仅通过配置完成 `dev/stag/prod/down/logs/ps`。
 
@@ -196,6 +199,7 @@ export default {
 
 ### Phase 4：复杂特例与工程化
 
+- [ ] 实现受限 Lua hook API 与测试策略。
 - [ ] 迁移 `QX_Web_V4_WWW`：构建元数据与可选后端 E2E 联调 hook。
 - [ ] 迁移 `QX_Web_V4_ImageUtil`：运行配置初始化、SQLite 数据策略。
 - [ ] 迁移 `DevAuthServer`：Keycloak ready 检查和 realm/用户初始化 hook。
@@ -206,7 +210,7 @@ export default {
 
 ### Phase 5：发布与治理
 
-- [ ] 建立语义化版本、变更日志和发布流水线。
+- [ ] 建立语义化版本、变更日志、跨平台二进制构建与 GitHub Release 发布流水线。
 - [ ] 每个适配器维护集成测试 fixture。
 - [ ] 增加 `doctor` 命令检查 Node、Docker、Compose、端口及配置。
 - [ ] 制定兼容窗口和弃用策略。
@@ -232,4 +236,4 @@ export default {
 - [ ] 业务差异全部位于配置、adapter 或 hook，且有测试覆盖。
 - [ ] 所有破坏性数据操作均需显式参数，且只允许开发环境。
 - [ ] 母仓库与至少两个不同技术栈的真实仓库具备端到端验证。
-- [ ] 包发布、升级、回滚和新仓接入流程有文档。
+- [ ] CLI 发布、升级、回滚和新仓接入流程有文档。
