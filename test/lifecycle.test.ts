@@ -10,10 +10,12 @@ import {
   logsCommand,
   psCommand,
   resetCommand,
+  profileProjectName,
   startCommands,
   taskProjectName,
 } from "../src/core/lifecycle.js";
 import { loadConfig } from "../src/core/config.js";
+import { validateConfig } from "../src/schema/config.js";
 import { assertResettableProfile, confirmDestructive } from "../src/core/safety.js";
 import { parseComposePs, waitForComposeHealthy, waitForHttp } from "../src/core/health.js";
 import { hostStatus, startHostBackground, stopHostBackground } from "../src/core/hostProcess.js";
@@ -31,15 +33,29 @@ const hybrid = resolve(fixtures, "hybrid-host-service");
 /** Records every command a runner is asked to execute. */
 function recordingRunner(exitCodes: Record<string, number> = {}) {
   const calls: CommandSpec[] = [];
-  const runner = vi.fn(async (spec: CommandSpec): Promise<ProcessResult> => {
-    calls.push(spec);
-    const key = spec.args.find((arg) => ["up", "down", "run", "logs", "ps"].includes(arg)) ?? "";
-    return { exitCode: exitCodes[key] ?? 0 };
-  });
+  const runner = vi.fn(
+    async (spec: CommandSpec, options?: { capture?: boolean }): Promise<ProcessResult> => {
+      calls.push(spec);
+      const key = spec.args.find((arg) => ["up", "down", "run", "logs", "ps"].includes(arg)) ?? "";
+      if (options?.capture)
+        return {
+          exitCode: 0,
+          stdout:
+            '[{"Service":"app","State":"running"},{"Service":"db","State":"running","Health":"healthy"},{"Service":"database","State":"running","Health":"healthy"}]',
+        };
+      return { exitCode: exitCodes[key] ?? 0 };
+    },
+  );
   return { calls, runner };
 }
 
 describe("start commands never tear an environment down", () => {
+  it("gives every profile a distinct Compose project", async () => {
+    const { config } = await loadConfig(composeService);
+    expect(profileProjectName(config, "dev")).toBe("fixture-compose-dev");
+    expect(profileProjectName(config, "stag")).toBe("fixture-compose-stag");
+  });
+
   it("runs dev in the foreground with a plain up and explicit isolation args", async () => {
     const { config } = await loadConfig(composeService);
     const [spec, ...others] = startCommands(config, "dev");
@@ -47,7 +63,7 @@ describe("start commands never tear an environment down", () => {
     expect(spec.args).toEqual([
       "compose",
       "--project-name",
-      "fixture-compose",
+      "fixture-compose-dev",
       "-f",
       "docker/compose.yml",
       "--profile",
@@ -78,7 +94,7 @@ describe("down and reset volume policy", () => {
     expect(downCommand(config, "dev").args).toEqual([
       "compose",
       "--project-name",
-      "fixture-compose",
+      "fixture-compose-dev",
       "-f",
       "docker/compose.yml",
       "--profile",
@@ -139,6 +155,17 @@ describe("logs and ps", () => {
 });
 
 describe("isolated task lifecycle", () => {
+  it("rejects non-isolated Compose tasks before they can share a runtime project", () => {
+    expect(() =>
+      validateConfig({
+        id: "unsafe-task",
+        compose: { file: "docker/compose.yml", projectName: "unsafe-task" },
+        profiles: { dev: { kind: "compose-service", services: ["app"] } },
+        tasks: { test: { profile: "test", services: ["app-test"], isolated: false } },
+      }),
+    ).toThrow(/isolated must be true/);
+  });
+
   it("uses a project name distinct from every profile", async () => {
     const { config } = await loadConfig(composeService);
     expect(taskProjectName(config, "test")).toBe("fixture-compose-task-test");

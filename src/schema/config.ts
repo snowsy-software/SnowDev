@@ -110,12 +110,15 @@ function hooks(value: unknown, path: string): LifecycleHooks {
 }
 function task(value: unknown, path: string): TaskConfig {
   const input = record(value, path);
-  if (typeof input.isolated !== "boolean")
-    throw new SnowDevError("E_CONFIG_INVALID", `${path}.isolated must be a boolean.`);
+  if (input.isolated !== true)
+    throw new SnowDevError(
+      "E_CONFIG_INVALID",
+      `${path}.isolated must be true; Compose tasks always run in an isolated project.`,
+    );
   return {
     profile: string(input.profile, `${path}.profile`),
     services: strings(input.services, `${path}.services`),
-    isolated: input.isolated,
+    isolated: true,
   };
 }
 /** Validates an untyped MJS default export and returns the typed configuration. */

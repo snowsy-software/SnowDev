@@ -1,0 +1,13 @@
+{
+  "name": "snowdev-vite-service-example",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "test": "node --test test/smoke.js"
+  },
+  "devDependencies": {
+    "vite": "^6.2.0"
+  }
+}

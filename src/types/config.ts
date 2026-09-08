@@ -4,7 +4,7 @@ export type WorkflowKind = "compose-service" | "host-app-with-compose-deps" | "c
 export interface ComposeConfig {
   /** Path to the Compose file, relative to the configuration file's directory. */
   file: string;
-  /** Explicit Compose project name that prevents collisions between projects. */
+  /** Base Compose project name; SnowDev appends the active profile for isolation. */
   projectName: string;
 }
 /** HTTP readiness probe used to gate a profile or task before it is considered up. */
@@ -48,8 +48,8 @@ export interface TaskConfig {
   profile: string;
   /** Compose services that execute the task. */
   services: string[];
-  /** Whether the task must use an isolated Compose project. */
-  isolated: boolean;
+  /** Tasks always use their own disposable Compose project. */
+  isolated: true;
 }
 /** Options accepted by a hook's controlled command runner. */
 export interface HookExecOptions {

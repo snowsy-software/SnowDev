@@ -1,14 +1,14 @@
 import { loadConfig } from "../core/config.js";
 import { loadEnvironment } from "../core/env.js";
 import { SnowDevError } from "../core/errors.js";
-import { waitForHttp, type HttpProbe, type Sleep } from "../core/health.js";
+import { waitForComposeHealthy, waitForHttp, type HttpProbe, type Sleep } from "../core/health.js";
 import {
   runHostForeground,
   startHostBackground,
   type HostProcessDeps,
 } from "../core/hostProcess.js";
 import { runHook } from "../core/hooks.js";
-import { isForeground, startCommands } from "../core/lifecycle.js";
+import { isForeground, profileProjectName, startCommands } from "../core/lifecycle.js";
 import { logCommand } from "../core/log.js";
 import { runProcess, type ProcessRunner } from "../core/process.js";
 
@@ -77,6 +77,13 @@ export async function run(options: RunOptions): Promise<number> {
     stdio: attach ? "inherit" : "ignore",
   });
   if (attach || brought.exitCode !== 0) return brought.exitCode;
+
+  await waitForComposeHealthy(config.compose, options.profileKey, profile.services, {
+    runner,
+    cwd: options.cwd,
+    sleep: options.sleep,
+    compose: { projectName: profileProjectName(config, options.profileKey) },
+  });
 
   if (profile.health) {
     log(`Waiting for ${profile.health.url} ...`);

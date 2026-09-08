@@ -8,6 +8,21 @@ export function isForeground(profileKey: string, profile: ProfileConfig): boolea
   return profile.foreground ?? profileKey === "dev";
 }
 
+/** Builds the Compose project name reserved for one runtime profile. */
+export function profileProjectName(config: SnowDevConfig, profileKey: string): string {
+  return `${config.compose.projectName}-${profileKey}`;
+}
+
+function profileCompose(
+  config: SnowDevConfig,
+  profileKey: string,
+  command: readonly string[],
+): CommandSpec {
+  return composeCommand(config.compose, profileKey, command, {
+    projectName: profileProjectName(config, profileKey),
+  });
+}
+
 /**
  * Builds the Compose command(s) that start a profile.
  *
@@ -21,23 +36,23 @@ export function startCommands(config: SnowDevConfig, profileKey: string): Comman
   if (!profile)
     throw new SnowDevError("E_PROFILE_NOT_FOUND", `No profile "${profileKey}" in configuration.`);
   const build = (args: string[]): CommandSpec => {
-    const spec = composeCommand(config.compose, profileKey, args);
+    const spec = profileCompose(config, profileKey, args);
     assertNoImplicitDown(profileKey, spec.args);
     return spec;
   };
   if (profile.kind === "container-cli")
     return profile.services.map((service) => build(["run", "--rm", service]));
   if (profile.kind === "host-app-with-compose-deps")
-    return [build(["up", "-d", "--wait", ...profile.services])];
+    return [build(["up", "-d", ...profile.services])];
   if (isForeground(profileKey, profile)) return [build(["up", ...profile.services])];
-  return [build(["up", "-d", "--build", "--wait", ...profile.services])];
+  return [build(["up", "-d", "--build", ...profile.services])];
 }
 
 /** Builds the explicit `down` command for a profile. Never deletes volumes. */
 export function downCommand(config: SnowDevConfig, profileKey: string): CommandSpec {
   if (!config.profiles[profileKey])
     throw new SnowDevError("E_PROFILE_NOT_FOUND", `No profile "${profileKey}" in configuration.`);
-  return composeCommand(config.compose, profileKey, ["down", "--remove-orphans"]);
+  return profileCompose(config, profileKey, ["down", "--remove-orphans"]);
 }
 
 /** Builds the `logs` command, following output by default. */
@@ -45,7 +60,7 @@ export function logsCommand(config: SnowDevConfig, profileKey: string, follow = 
   const profile = config.profiles[profileKey];
   if (!profile)
     throw new SnowDevError("E_PROFILE_NOT_FOUND", `No profile "${profileKey}" in configuration.`);
-  return composeCommand(config.compose, profileKey, [
+  return profileCompose(config, profileKey, [
     "logs",
     ...(follow ? ["-f"] : []),
     ...profile.services,
@@ -55,13 +70,13 @@ export function logsCommand(config: SnowDevConfig, profileKey: string, follow = 
 /**
  * Builds the volume-deleting teardown for `reset`.
  *
- * This is the only place SnowDev passes `--volumes` to a non-isolated project, and
- * callers must have already checked {@link assertResettableProfile}.
+ * This is the only place SnowDev passes `--volumes` to a runtime profile project,
+ * and callers must have already checked {@link assertResettableProfile}.
  */
 export function resetCommand(config: SnowDevConfig, profileKey: string): CommandSpec {
   if (!config.profiles[profileKey])
     throw new SnowDevError("E_PROFILE_NOT_FOUND", `No profile "${profileKey}" in configuration.`);
-  return composeCommand(config.compose, profileKey, ["down", "--volumes", "--remove-orphans"]);
+  return profileCompose(config, profileKey, ["down", "--volumes", "--remove-orphans"]);
 }
 
 /** Builds the `ps` command for a profile. */
@@ -69,7 +84,7 @@ export function psCommand(config: SnowDevConfig, profileKey: string): CommandSpe
   const profile = config.profiles[profileKey];
   if (!profile)
     throw new SnowDevError("E_PROFILE_NOT_FOUND", `No profile "${profileKey}" in configuration.`);
-  return composeCommand(config.compose, profileKey, ["ps", ...profile.services]);
+  return profileCompose(config, profileKey, ["ps", ...profile.services]);
 }
 
 /**
@@ -95,23 +110,18 @@ export interface TaskPlan {
   /**
    * Teardown that must run in a `finally`.
    *
-   * Isolated plans remove volumes because the project is disposable; non-isolated
-   * plans only stop the services they started and never touch volumes.
+   * Task plans always remove volumes because their project is disposable.
    */
   cleanup: CommandSpec;
 }
 /** Builds the full lifecycle plan for a declared task. */
 export function taskPlan(config: SnowDevConfig, taskName: string, task: TaskConfig): TaskPlan {
-  const projectName = task.isolated
-    ? taskProjectName(config, taskName)
-    : config.compose.projectName;
+  const projectName = taskProjectName(config, taskName);
   const overrides = { projectName };
-  const cleanupArgs = task.isolated
-    ? ["down", "--volumes", "--remove-orphans"]
-    : ["down", "--remove-orphans"];
+  const cleanupArgs = ["down", "--volumes", "--remove-orphans"];
   return {
     projectName,
-    isolated: task.isolated,
+    isolated: true,
     up: composeCommand(
       config.compose,
       task.profile,

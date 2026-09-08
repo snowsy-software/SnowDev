@@ -1,7 +1,8 @@
 # Example: Vite service (`compose-service`)
 
 A front-end dev server where the app and its test runner are both Docker Compose
-services. This is the shape most Vite/Next projects use.
+services. This directory includes a minimal Vite application and smoke test, so
+it can be copied and run as-is.
 
 ## Install
 

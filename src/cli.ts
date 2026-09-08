@@ -59,6 +59,16 @@ function requireProfile(positionals: readonly string[], command: string): string
   return positionals[0];
 }
 
+/** Returns an optional profile, rejecting surplus positionals before any action runs. */
+function optionalProfile(positionals: readonly string[], command: string): string {
+  if (positionals.length > 1)
+    throw new SnowDevError(
+      "E_INVALID_ARGUMENT",
+      `snowdev ${command} accepts at most one [profile].`,
+    );
+  return positionals[0] ?? "dev";
+}
+
 /** Parses top-level CLI arguments and dispatches the requested command. */
 async function main(argv: readonly string[]): Promise<number> {
   const [command, ...rest] = argv;
@@ -77,18 +87,25 @@ async function main(argv: readonly string[]): Promise<number> {
     case "run":
       return run({ cwd, profileKey: requireProfile(positionals, "run") });
     case "down":
-      return down({ cwd, profileKey: positionals[0] ?? "dev" });
+      return down({ cwd, profileKey: optionalProfile(positionals, "down") });
     case "logs":
-      return logs({ cwd, profileKey: positionals[0] ?? "dev", follow });
+      return logs({ cwd, profileKey: optionalProfile(positionals, "logs"), follow });
     case "ps":
-      return ps({ cwd, profileKey: positionals[0] ?? "dev" });
+      return ps({ cwd, profileKey: optionalProfile(positionals, "ps") });
     case "task":
       return task({ cwd, name: requireProfile(positionals, "task") });
     case "init":
-      if (positionals[0] === "template") return initTemplate({ cwd, kind: positionals[1] });
-      return init({ cwd, profileKey: positionals[0] ?? "dev", yes });
+      if (positionals[0] === "template") {
+        if (positionals.length > 2)
+          throw new SnowDevError(
+            "E_INVALID_ARGUMENT",
+            "snowdev init template accepts at most one [kind].",
+          );
+        return initTemplate({ cwd, kind: positionals[1] });
+      }
+      return init({ cwd, profileKey: optionalProfile(positionals, "init"), yes });
     case "reset":
-      return reset({ cwd, profileKey: positionals[0] ?? "dev", yes });
+      return reset({ cwd, profileKey: optionalProfile(positionals, "reset"), yes });
     case "doctor": {
       if (positionals.length > 0)
         throw new SnowDevError("E_INVALID_ARGUMENT", "snowdev doctor does not accept arguments.");

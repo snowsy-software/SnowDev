@@ -103,7 +103,7 @@ describe("doctor", () => {
     expect(result.ok).toBe(true);
     expect(calls).toEqual([
       "docker:--version",
-      "docker:compose|--project-name|fixture-compose|-f|docker/compose.yml|--profile|dev|version",
+      "docker:compose|--project-name|fixture-compose-dev|-f|docker/compose.yml|--profile|dev|version",
     ]);
   });
 });

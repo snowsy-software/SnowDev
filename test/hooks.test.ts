@@ -19,10 +19,13 @@ const composeService = resolve(fixtures, "compose-service");
 /** Records every command a runner is asked to execute. */
 function recordingRunner() {
   const calls: CommandSpec[] = [];
-  const runner = vi.fn(async (spec: CommandSpec): Promise<ProcessResult> => {
-    calls.push(spec);
-    return { exitCode: 0 };
-  });
+  const runner = vi.fn(
+    async (spec: CommandSpec, options?: { capture?: boolean }): Promise<ProcessResult> => {
+      calls.push(spec);
+      if (options?.capture) return { exitCode: 0, stdout: '[{"Service":"app","State":"running"}]' };
+      return { exitCode: 0 };
+    },
+  );
   return { calls, runner };
 }
 

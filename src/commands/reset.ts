@@ -2,6 +2,7 @@ import { loadConfig } from "../core/config.js";
 import { resetCommand } from "../core/lifecycle.js";
 import { logCommand } from "../core/log.js";
 import { runProcess, type ProcessRunner } from "../core/process.js";
+import { profileProjectName } from "../core/lifecycle.js";
 import { assertResettableProfile, confirmDestructive } from "../core/safety.js";
 
 /** Inputs for the `reset` command. */
@@ -29,7 +30,7 @@ export async function reset(options: ResetOptions): Promise<number> {
   confirmDestructive(
     `reset ${profileKey}`,
     [
-      `stop and remove containers for Compose project "${config.compose.projectName}"`,
+      `stop and remove containers for Compose project "${profileProjectName(config, profileKey)}"`,
       `delete named volumes for the "${profileKey}" profile (local data will be lost)`,
       "remove orphaned containers from earlier configurations",
     ],

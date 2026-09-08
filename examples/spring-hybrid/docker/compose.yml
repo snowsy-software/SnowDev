@@ -1,4 +1,4 @@
-# Dependency-only topology. The Spring Boot app runs on the host via ./mvnw.
+# Dependency-only topology. The Spring Boot app runs on the host via Maven.
 # The password is a throwaway local development value, not a secret.
 services:
   db:
