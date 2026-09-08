@@ -46,7 +46,13 @@ describe("configuration schema", () => {
         validateConfig({
           id: "example",
           compose: { file: "docker/compose.yml", projectName: "example" },
-          profiles: { dev: { kind, services: ["app"] } },
+          profiles: {
+            dev: {
+              kind,
+              services: ["app"],
+              ...(kind === "host-app-with-compose-deps" ? { host: { command: "node" } } : {}),
+            },
+          },
         }).profiles.dev.kind,
       ).toBe(kind);
     }
