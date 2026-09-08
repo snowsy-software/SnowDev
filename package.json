@@ -1,0 +1,53 @@
+{
+  "name": "@snowdev/cli",
+  "version": "0.0.0",
+  "description": "A cross-platform development workflow orchestrator.",
+  "license": "Apache-2.0",
+  "private": false,
+  "type": "module",
+  "bin": {
+    "snowdev": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "NOTICE",
+    "README.md",
+    "README-ZH.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/cli.d.ts",
+      "import": "./dist/cli.js"
+    }
+  },
+  "types": "./dist/cli.d.ts",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "dev": "tsx src/cli.ts",
+    "pack:check": "npm pack --dry-run --cache .npm-cache",
+    "prepack": "npm run clean && npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "globals": "^15.0.0",
+    "prettier": "^3.0.0",
+    "rimraf": "^6.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^5.0.0"
+  }
+}
