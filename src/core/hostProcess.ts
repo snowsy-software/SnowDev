@@ -3,6 +3,7 @@ import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import type { HostProcessConfig } from "../types/config.js";
 import { SnowDevError } from "./errors.js";
+import { needsWindowsShell } from "./spawnCompat.js";
 
 /** Directory under a consuming project that holds SnowDev runtime state. */
 export const stateDir = ".snowdev";
@@ -71,7 +72,7 @@ export async function runHostForeground(
   const spawnOptions: SpawnOptions = {
     cwd: options.cwd,
     env: options.env,
-    shell: false,
+    shell: needsWindowsShell(host.command),
     stdio: "inherit",
     windowsHide: true,
   };
@@ -101,7 +102,7 @@ export async function startHostBackground(
   const child = deps.spawn(host.command, host.args ?? [], {
     cwd: options.cwd,
     env: options.env,
-    shell: false,
+    shell: needsWindowsShell(host.command),
     stdio: "ignore",
     detached: true,
     windowsHide: true,

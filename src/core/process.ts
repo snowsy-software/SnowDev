@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import type { CommandSpec } from "./compose.js";
+import { needsWindowsShell } from "./spawnCompat.js";
 /** Result reported after a child process exits. */
 export interface ProcessResult {
   exitCode: number;
@@ -16,13 +17,18 @@ export interface ProcessOptions {
 }
 /** Executes a command specification, optionally allowing callers to replace it in tests. */
 export type ProcessRunner = (spec: CommandSpec, options?: ProcessOptions) => Promise<ProcessResult>;
-/** Runs a command without a shell, preserving argument boundaries on every platform. */
+/**
+ * Runs a command, preserving argument boundaries on every platform.
+ *
+ * Stays shell-free except for Windows `.cmd`/`.bat` commands, which the OS can only
+ * launch through `cmd.exe`; see {@link needsWindowsShell}.
+ */
 export const runProcess: ProcessRunner = (spec, options = {}) =>
   new Promise((resolve, reject) => {
     const child = spawn(spec.command, spec.args, {
       cwd: options.cwd,
       env: options.env,
-      shell: false,
+      shell: needsWindowsShell(spec.command),
       stdio: options.capture ? ["ignore", "pipe", "inherit"] : (options.stdio ?? "inherit"),
       windowsHide: true,
     });
