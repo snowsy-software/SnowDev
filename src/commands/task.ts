@@ -1,6 +1,7 @@
 import { loadConfig } from "../core/config.js";
 import { loadEnvironment } from "../core/env.js";
 import { SnowDevError } from "../core/errors.js";
+import { runHook } from "../core/hooks.js";
 import { taskPlan } from "../core/lifecycle.js";
 import { logCommand } from "../core/log.js";
 import { runProcess, type ProcessRunner } from "../core/process.js";
@@ -24,8 +25,21 @@ export async function task(options: TaskOptions): Promise<number> {
   const runner = options.runner ?? runProcess;
   const { config } = await loadConfig(options.cwd);
   const declared = config.tasks?.[options.name];
-  if (!declared)
-    throw new SnowDevError("E_TASK_NOT_FOUND", `No task "${options.name}" in configuration.`);
+  if (!declared) {
+    const hook = config.hooks?.task?.[options.name];
+    if (!hook)
+      throw new SnowDevError("E_TASK_NOT_FOUND", `No task "${options.name}" in configuration.`);
+    const env = await loadEnvironment(options.cwd, options.name, config.env);
+    await runHook(`task:${options.name}`, hook, {
+      config,
+      cwd: options.cwd,
+      key: options.name,
+      env,
+      runner,
+      log,
+    });
+    return 0;
+  }
   const plan = taskPlan(config, options.name, declared);
   const env = await loadEnvironment(options.cwd, declared.profile, config.env);
   log(

@@ -1,0 +1,19 @@
+# Sample Compose topology. Replace the image and commands with your own; SnowDev
+# never generates or edits this file after the first scaffold.
+services:
+  app:
+    image: node:22-alpine
+    working_dir: /app
+    command: ["npm", "run", "dev"]
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./:/app
+
+  app-test:
+    image: node:22-alpine
+    working_dir: /app
+    command: ["npm", "test"]
+    volumes:
+      - ./:/app
+    profiles: ["test"]

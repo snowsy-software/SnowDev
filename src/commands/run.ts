@@ -7,6 +7,7 @@ import {
   startHostBackground,
   type HostProcessDeps,
 } from "../core/hostProcess.js";
+import { runHook } from "../core/hooks.js";
 import { isForeground, startCommands } from "../core/lifecycle.js";
 import { logCommand } from "../core/log.js";
 import { runProcess, type ProcessRunner } from "../core/process.js";
@@ -41,6 +42,16 @@ export async function run(options: RunOptions): Promise<number> {
     );
   const env = await loadEnvironment(options.cwd, options.profileKey, config.env);
   const foreground = isForeground(options.profileKey, profile);
+  const hookOptions = {
+    config,
+    cwd: options.cwd,
+    key: options.profileKey,
+    profile,
+    env,
+    runner,
+    log,
+  };
+  await runHook("beforeRun", config.hooks?.beforeRun, hookOptions);
   const specs = startCommands(config, options.profileKey);
 
   // container-cli: run each one-off service attached; stop at the first failure.
@@ -50,6 +61,7 @@ export async function run(options: RunOptions): Promise<number> {
       const result = await runner(spec, { cwd: options.cwd, env, stdio: "inherit" });
       if (result.exitCode !== 0) return result.exitCode;
     }
+    await runHook("afterDependenciesReady", config.hooks?.afterDependenciesReady, hookOptions);
     return 0;
   }
 
@@ -70,6 +82,8 @@ export async function run(options: RunOptions): Promise<number> {
     log(`Waiting for ${profile.health.url} ...`);
     await waitForHttp(profile.health, { probe: options.httpProbe, sleep: options.sleep });
   }
+
+  await runHook("afterDependenciesReady", config.hooks?.afterDependenciesReady, hookOptions);
 
   if (profile.kind === "host-app-with-compose-deps") {
     if (!profile.host)

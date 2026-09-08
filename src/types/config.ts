@@ -51,6 +51,66 @@ export interface TaskConfig {
   /** Whether the task must use an isolated Compose project. */
   isolated: boolean;
 }
+/** Options accepted by a hook's controlled command runner. */
+export interface HookExecOptions {
+  /** Working directory for the child process. Defaults to the project directory. */
+  cwd?: string;
+  /** Environment for the child process. Defaults to the profile's merged environment. */
+  env?: NodeJS.ProcessEnv;
+}
+/** Result of a hook's controlled command invocation. */
+export interface HookExecResult {
+  /** Exit code reported by the child process. */
+  exitCode: number;
+}
+/**
+ * The controlled surface passed to every custom hook.
+ *
+ * Hooks receive resolved configuration, the merged environment, a logger, and a
+ * shell-free command runner. There is deliberately no way to run an arbitrary
+ * shell string: {@link HookContext.exec} always takes an explicit argument array.
+ */
+export interface HookContext {
+  /** The profile or task key that triggered this hook. */
+  key: string;
+  /** Resolved profile configuration, present when a profile triggered the hook. */
+  profile?: ProfileConfig;
+  /** The full, validated configuration. */
+  config: SnowDevConfig;
+  /** Absolute path to the consuming project directory. */
+  cwd: string;
+  /** Environment merged with SnowDev's fixed precedence for the active profile. */
+  env: NodeJS.ProcessEnv;
+  /** Writes a line to SnowDev's diagnostic stream (stderr). */
+  log: (line: string) => void;
+  /** Runs an executable with an explicit argument array; never uses a shell. */
+  exec: (command: string, args?: string[], options?: HookExecOptions) => Promise<HookExecResult>;
+}
+/** A custom lifecycle callback declared in `snowdev.config.mjs`. */
+export type Hook = (context: HookContext) => void | Promise<void>;
+/** The named, restricted lifecycle hooks a project may declare. */
+export interface LifecycleHooks {
+  /** Runs before any container or host process for a `run` starts. */
+  beforeRun?: Hook;
+  /**
+   * Runs after Compose dependencies report healthy.
+   *
+   * Fires for background `compose-service` profiles and for
+   * `host-app-with-compose-deps` (before the host process starts). It does not
+   * fire for an attached foreground `compose-service`, which has no separate
+   * dependency phase.
+   */
+  afterDependenciesReady?: Hook;
+  /** Runs before `down` stops the host process or any container. */
+  beforeDown?: Hook;
+  /**
+   * Pure-JavaScript named tasks.
+   *
+   * `snowdev task <name>` runs the matching entry when no Compose `tasks.<name>`
+   * is declared. A name may not appear in both `tasks` and `hooks.task`.
+   */
+  task?: Record<string, Hook>;
+}
 /** Complete, validated shape of `snowdev.config.mjs`. */
 export interface SnowDevConfig {
   /** Stable identifier for the consuming project. */
@@ -63,4 +123,6 @@ export interface SnowDevConfig {
   tasks?: Record<string, TaskConfig>;
   /** Lowest-priority environment defaults for child processes. */
   env?: Record<string, string>;
+  /** Optional custom lifecycle hooks. */
+  hooks?: LifecycleHooks;
 }

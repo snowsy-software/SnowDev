@@ -1,0 +1,6 @@
+# Sample one-off tool. `snowdev run dev` executes `docker compose run --rm tool`.
+# Replace the image and command with your own.
+services:
+  tool:
+    image: alpine:3.20
+    command: ["sh", "-c", "echo 'replace this one-off command'"]

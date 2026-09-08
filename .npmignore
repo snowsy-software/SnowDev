@@ -4,6 +4,7 @@ src/
 test/
 tests/
 docs/
+examples/
 .env
 .env.*
 *.log

@@ -227,10 +227,10 @@ snowdev/
 
 ### Phase 3：custom hooks 与模板
 
-- [ ] 定义 `beforeRun`、`afterDependenciesReady`、`beforeDown`、`task` 等具名 hook 类型。
-- [ ] 提供 Vite/Next、Spring hybrid、WordPress、container CLI 示例。
-- [ ] 编写配置迁移指南与命令映射指南。
-- [ ] 提供 `snowdev init` 生成脱敏模板，但不覆盖已有脚本或 Compose 文件。
+- [x] 定义 `beforeRun`、`afterDependenciesReady`、`beforeDown`、`task` 等具名 hook 类型。
+- [x] 提供 Vite/Next、Spring hybrid、WordPress、container CLI 示例。
+- [x] 编写配置迁移指南与命令映射指南。
+- [x] 提供 `snowdev init` 生成脱敏模板，但不覆盖已有脚本或 Compose 文件。
 
 验收：示例可独立运行，且没有引用 QX/Snowsy 的内部资源。
 

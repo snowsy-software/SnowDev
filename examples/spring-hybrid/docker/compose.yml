@@ -1,0 +1,16 @@
+# Dependency-only topology. The Spring Boot app runs on the host via ./mvnw.
+# The password is a throwaway local development value, not a secret.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app"]
+      interval: 2s
+      timeout: 3s
+      retries: 15

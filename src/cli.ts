@@ -3,6 +3,7 @@
 import { runDoctor } from "./commands/doctor.js";
 import { down } from "./commands/down.js";
 import { init } from "./commands/init.js";
+import { initTemplate } from "./commands/initTemplate.js";
 import { logs } from "./commands/logs.js";
 import { ps } from "./commands/ps.js";
 import { reset } from "./commands/reset.js";
@@ -27,6 +28,7 @@ function printUsage(): void {
       "  ps [profile]        Show container and host-process status (default: dev)",
       "  task <name>         Run a declared task in an isolated environment with cleanup",
       "  init [profile]      First-time setup for a profile (default: dev); requires --yes",
+      "  init template [kind]  Scaffold snowdev.config.mjs + sample compose (never overwrites)",
       "  reset [profile]     Delete dev containers and volumes (dev only); requires --yes",
       "  doctor             Check Node, Docker, Compose, and project configuration",
     ].join("\n"),
@@ -83,6 +85,7 @@ async function main(argv: readonly string[]): Promise<number> {
     case "task":
       return task({ cwd, name: requireProfile(positionals, "task") });
     case "init":
+      if (positionals[0] === "template") return initTemplate({ cwd, kind: positionals[1] });
       return init({ cwd, profileKey: positionals[0] ?? "dev", yes });
     case "reset":
       return reset({ cwd, profileKey: positionals[0] ?? "dev", yes });
