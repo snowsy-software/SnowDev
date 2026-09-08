@@ -36,6 +36,16 @@ npm run test
 - Windows 下部分脚本使用 shell 执行，参数转义与可移植性较弱。
 - 新项目需要复制旧脚本后再逐处修改，无法安全继承上游改进。
 
+- C:\Users\xiaoa\QX_Web_V4_Admin
+- C:\Users\xiaoa\QX_Web_V4_Backend
+- C:\Users\xiaoa\QX_Web_V4_WWW
+- C:\Users\xiaoa\QX_Web_V4_Ops
+- C:\Users\xiaoa\QX_Web_V4_ImageUtil
+- C:\Users\xiaoa\AUSCompanyDS
+- C:\Users\xiaoa\AUSCompanyDS_Admin
+- C:\Users\xiaoa\Website-WordPress-Backend
+- C:\Users\xiaoa\DevAuthServer
+
 ### 1.3 非目标
 
 SnowDev 第一阶段不做以下事情：
