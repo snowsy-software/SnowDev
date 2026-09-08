@@ -1,8 +1,8 @@
 {
-  "name": "@snowdev/cli",
+  "name": "@snowsy-software/snowdev",
   "version": "0.0.0",
   "description": "A cross-platform development workflow orchestrator.",
-  "license": "Apache-2.0",
+  "license": "UNLICENSED",
   "private": false,
   "type": "module",
   "bin": {
@@ -11,10 +11,7 @@
   "files": [
     "dist",
     "templates",
-    "LICENSE",
-    "NOTICE",
-    "README.md",
-    "README-ZH.md"
+    "README.md"
   ],
   "exports": {
     ".": {
@@ -27,7 +24,11 @@
     "node": ">=20.19.0"
   },
   "publishConfig": {
-    "access": "public"
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/snowsy-software/Snowsy-Project-Starter.git"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
