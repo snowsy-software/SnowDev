@@ -7,6 +7,28 @@ export interface ComposeConfig {
   /** Explicit Compose project name that prevents collisions between projects. */
   projectName: string;
 }
+/** HTTP readiness probe used to gate a profile or task before it is considered up. */
+export interface HttpHealthCheck {
+  /** Absolute URL polled until it answers with a non-5xx status. */
+  url: string;
+  /** Total time to keep polling before failing. Defaults to 60000ms. */
+  timeoutMs?: number;
+  /** Delay between attempts. Defaults to 1000ms. */
+  intervalMs?: number;
+}
+/**
+ * Host-process definition for `host-app-with-compose-deps` profiles.
+ *
+ * The application runs on the host while Compose only starts its dependencies.
+ */
+export interface HostProcessConfig {
+  /** Executable to launch on the host. Never interpreted by a shell. */
+  command: string;
+  /** Literal arguments passed to the executable. */
+  args?: string[];
+  /** Seconds to wait for a graceful stop before sending SIGKILL. Defaults to 10. */
+  stopGraceSeconds?: number;
+}
 /** Settings for one named environment, such as `dev` or `prod`. */
 export interface ProfileConfig {
   /** The execution model used by this profile. */
@@ -15,6 +37,10 @@ export interface ProfileConfig {
   services: string[];
   /** Whether long-running services should remain attached to the terminal. */
   foreground?: boolean;
+  /** Optional HTTP readiness gate applied after the profile's containers start. */
+  health?: HttpHealthCheck;
+  /** Host process definition. Required for `host-app-with-compose-deps`. */
+  host?: HostProcessConfig;
 }
 /** A declared one-off task, such as test or lint. */
 export interface TaskConfig {

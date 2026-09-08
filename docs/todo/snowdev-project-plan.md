@@ -216,12 +216,12 @@ snowdev/
 
 ### Phase 2：运行时生命周期与安全机制
 
-- [ ] 实现 `run` 的前台和后台生命周期。
-- [ ] 实现 `down`、`logs`、`ps`。
-- [ ] 实现 HTTP 与 Compose healthcheck 等待，支持超时和失败诊断。
-- [ ] 实现 `init`、`reset` 及 `--yes` 保护。
-- [ ] 实现隔离测试任务的创建、执行和 `finally` 清理。
-- [ ] 为 `host-app-with-compose-deps` 实现宿主进程启动、PID 状态和受控停止接口。
+- [x] 实现 `run` 的前台和后台生命周期。
+- [x] 实现 `down`、`logs`、`ps`。
+- [x] 实现 HTTP 与 Compose healthcheck 等待，支持超时和失败诊断。
+- [x] 实现 `init`、`reset` 及 `--yes` 保护。
+- [x] 实现隔离测试任务的创建、执行和 `finally` 清理。
+- [x] 为 `host-app-with-compose-deps` 实现宿主进程启动、PID 状态和受控停止接口。
 
 验收：不会在 `run stag/prod` 中调用 `down`；无 `--yes` 的 reset 必须失败；测试环境与 dev project 名不同。
 

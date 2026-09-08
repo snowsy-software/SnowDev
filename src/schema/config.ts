@@ -1,5 +1,12 @@
 import { SnowDevError } from "../core/errors.js";
-import type { ProfileConfig, SnowDevConfig, TaskConfig, WorkflowKind } from "../types/config.js";
+import type {
+  HostProcessConfig,
+  HttpHealthCheck,
+  ProfileConfig,
+  SnowDevConfig,
+  TaskConfig,
+  WorkflowKind,
+} from "../types/config.js";
 
 const workflowKinds = new Set<WorkflowKind>([
   "compose-service",
@@ -25,6 +32,36 @@ function strings(value: unknown, path: string): string[] {
     throw new SnowDevError("E_CONFIG_INVALID", `${path} must be a non-empty array of strings.`);
   return [...value] as string[];
 }
+function positiveInteger(value: unknown, path: string): number {
+  if (typeof value !== "number" || !Number.isInteger(value) || value <= 0)
+    throw new SnowDevError("E_CONFIG_INVALID", `${path} must be a positive integer.`);
+  return value;
+}
+function health(value: unknown, path: string): HttpHealthCheck {
+  const input = record(value, path);
+  return {
+    url: string(input.url, `${path}.url`),
+    timeoutMs:
+      input.timeoutMs === undefined
+        ? undefined
+        : positiveInteger(input.timeoutMs, `${path}.timeoutMs`),
+    intervalMs:
+      input.intervalMs === undefined
+        ? undefined
+        : positiveInteger(input.intervalMs, `${path}.intervalMs`),
+  };
+}
+function host(value: unknown, path: string): HostProcessConfig {
+  const input = record(value, path);
+  return {
+    command: string(input.command, `${path}.command`),
+    args: input.args === undefined ? undefined : strings(input.args, `${path}.args`),
+    stopGraceSeconds:
+      input.stopGraceSeconds === undefined
+        ? undefined
+        : positiveInteger(input.stopGraceSeconds, `${path}.stopGraceSeconds`),
+  };
+}
 function profile(value: unknown, path: string): ProfileConfig {
   const input = record(value, path);
   const kind = string(input.kind, `${path}.kind`) as WorkflowKind;
@@ -32,10 +69,17 @@ function profile(value: unknown, path: string): ProfileConfig {
     throw new SnowDevError("E_CONFIG_INVALID", `${path}.kind is not a supported workflow kind.`);
   if (input.foreground !== undefined && typeof input.foreground !== "boolean")
     throw new SnowDevError("E_CONFIG_INVALID", `${path}.foreground must be a boolean.`);
+  if (kind === "host-app-with-compose-deps" && input.host === undefined)
+    throw new SnowDevError(
+      "E_CONFIG_INVALID",
+      `${path}.host is required for host-app-with-compose-deps profiles.`,
+    );
   return {
     kind,
     services: strings(input.services, `${path}.services`),
     foreground: input.foreground as boolean | undefined,
+    health: input.health === undefined ? undefined : health(input.health, `${path}.health`),
+    host: input.host === undefined ? undefined : host(input.host, `${path}.host`),
   };
 }
 function task(value: unknown, path: string): TaskConfig {
