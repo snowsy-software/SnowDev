@@ -12,7 +12,8 @@
     "dist",
     "LICENSE",
     "NOTICE",
-    "README.md"
+    "README.md",
+    "README-ZH.md"
   ],
   "exports": {
     ".": {

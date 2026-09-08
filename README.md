@@ -1,5 +1,7 @@
 # SnowDev
 
+[简体中文](README-ZH.md)
+
 SnowDev is a Node.js command-line tool for orchestrating repeatable local development workflows. It will provide a consistent interface around project-owned Docker Compose files, host processes, environment loading, health checks, and safety controls.
 
 ## Status
