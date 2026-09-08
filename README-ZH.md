@@ -6,7 +6,7 @@ SnowDev 是一个 Node.js 命令行工具，用于编排可重复的本地开发
 
 ## 当前状态
 
-本仓库目前处于私有预发布阶段，尚未发布到 npm，也不会在首个公开 npm 包获批准前改为公开。当前 `0.0.0` CLI 已提供 Phase 1 基础能力（包括 `doctor`）；生命周期命令仍在规划中。
+本仓库目前处于私有预发布阶段，尚未发布到 npm，也不会在首个公开 npm 包获批准前改为公开。当前 `0.0.0` CLI 已提供完整生命周期命令（`run`、`down`、`logs`、`ps`、`init`、`reset`、`task`、`doctor`）、custom 生命周期 hook（`beforeRun`、`afterDependenciesReady`、`beforeDown`、`task`）以及 `snowdev init template` 脚手架。可独立运行的分工作流示例见 [`examples/`](examples/)。
 
 ## 环境要求
 
@@ -33,7 +33,7 @@ npm run pack:check
 
 ## 文档
 
-请从[文档地图](docs/README.md)开始，其中包含总体架构、工程、配置与命令、安全、测试和本地开发规范。贡献者与 AI 协作者还必须遵守 [AGENTS.md](AGENTS.md)。
+请从[文档地图](docs/README.md)开始，其中包含总体架构、工程、配置与命令、安全、测试、本地开发规范和迁移指南。贡献者与 AI 协作者还必须遵守 [AGENTS.md](AGENTS.md)。
 
 `pack:check` 会执行 `npm pack --dry-run`。发布文件白名单定义在 `package.json` 中；源码、测试、仓库文档、环境文件和 CI 配置均不得进入 npm tarball。
 

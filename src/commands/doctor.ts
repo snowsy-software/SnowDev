@@ -1,6 +1,7 @@
 import { access } from "node:fs/promises";
 import { resolve } from "node:path";
 import { loadConfig } from "../core/config.js";
+import { profileProjectName } from "../core/lifecycle.js";
 import { composeCommand } from "../core/compose.js";
 import { runProcess, type ProcessRunner } from "../core/process.js";
 /** One diagnostic emitted by the `snowdev doctor` command. */
@@ -59,9 +60,10 @@ export async function runDoctor(
     } catch {
       checks.push({ name: "Compose file", ok: false, message: `Missing ${composeFile}` });
     }
-    const probe = composeCommand(loaded.config.compose, Object.keys(loaded.config.profiles)[0], [
-      "version",
-    ]);
+    const profileKey = Object.keys(loaded.config.profiles)[0];
+    const probe = composeCommand(loaded.config.compose, profileKey, ["version"], {
+      projectName: profileProjectName(loaded.config, profileKey),
+    });
     const result = await runner(probe, { cwd, stdio: "ignore" });
     checks.push({
       name: "Docker Compose",

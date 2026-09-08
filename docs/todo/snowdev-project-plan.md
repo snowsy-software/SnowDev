@@ -205,12 +205,12 @@ snowdev/
 
 ### Phase 1：core 基础能力
 
-- [ ] 实现 CLI 参数解析与统一错误格式。
-- [ ] 实现配置发现、MJS 配置加载及 schema 校验。
-- [ ] 实现无 shell 的跨平台子进程执行器。
-- [ ] 实现 Compose 参数构造器：`--project-name`、`-f`、`--profile`。
-- [ ] 实现受控的环境文件加载、优先级与日志脱敏。
-- [ ] 实现 `doctor` 的 Node、Docker、Docker Compose、文件和配置检查。
+- [x] 实现 CLI 参数解析与统一错误格式。
+- [x] 实现配置发现、MJS 配置加载及 schema 校验。
+- [x] 实现无 shell 的跨平台子进程执行器。
+- [x] 实现 Compose 参数构造器：`--project-name`、`-f`、`--profile`。
+- [x] 实现受控的环境文件加载、优先级与日志脱敏。
+- [x] 实现 `doctor` 的 Node、Docker、Docker Compose、文件和配置检查。
 
 验收：三个模板 fixture 可以输出正确命令；Windows/Linux 命令参数单测通过。
 
@@ -227,10 +227,10 @@ snowdev/
 
 ### Phase 3：custom hooks 与模板
 
-- [ ] 定义 `beforeRun`、`afterDependenciesReady`、`beforeDown`、`task` 等具名 hook 类型。
-- [ ] 提供 Vite/Next、Spring hybrid、WordPress、container CLI 示例。
-- [ ] 编写配置迁移指南与命令映射指南。
-- [ ] 提供 `snowdev init` 生成脱敏模板，但不覆盖已有脚本或 Compose 文件。
+- [x] 定义 `beforeRun`、`afterDependenciesReady`、`beforeDown`、`task` 等具名 hook 类型。
+- [x] 提供 Vite/Next、Spring hybrid、WordPress、container CLI 示例。
+- [x] 编写配置迁移指南与命令映射指南。
+- [x] 提供 `snowdev init` 生成脱敏模板，但不覆盖已有脚本或 Compose 文件。
 
 验收：示例可独立运行，且没有引用 QX/Snowsy 的内部资源。
 

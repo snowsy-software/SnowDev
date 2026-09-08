@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { loadConfig } from "../core/config.js";
 import { loadEnvironment } from "../core/env.js";
 import { SnowDevError } from "../core/errors.js";
+import { profileProjectName } from "../core/lifecycle.js";
 import { composeCommand } from "../core/compose.js";
 import { stateDir } from "../core/hostProcess.js";
 import { logCommand } from "../core/log.js";
@@ -45,12 +46,12 @@ export async function init(options: InitOptions): Promise<number> {
   );
   await mkdir(resolve(options.cwd, stateDir), { recursive: true });
   const env = await loadEnvironment(options.cwd, profileKey, config.env);
-  const spec = composeCommand(config.compose, profileKey, [
-    "up",
-    "-d",
-    "--build",
-    ...profile.services,
-  ]);
+  const spec = composeCommand(
+    config.compose,
+    profileKey,
+    ["up", "-d", "--build", ...profile.services],
+    { projectName: profileProjectName(config, profileKey) },
+  );
   const runner = options.runner ?? runProcess;
   logCommand(spec, log);
   const { exitCode } = await runner(spec, { cwd: options.cwd, env, stdio: "inherit" });

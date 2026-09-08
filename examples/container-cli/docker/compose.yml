@@ -1,0 +1,9 @@
+# `snowdev run dev` runs `docker compose run --rm tool` once and exits with its
+# status. Replace the image and command with your real one-off job.
+services:
+  tool:
+    image: alpine:3.20
+    working_dir: /work
+    command: ["sh", "-c", "echo 'container-cli example: replace this command'"]
+    volumes:
+      - ./:/work

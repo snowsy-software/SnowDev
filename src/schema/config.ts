@@ -1,7 +1,9 @@
 import { SnowDevError } from "../core/errors.js";
 import type {
+  Hook,
   HostProcessConfig,
   HttpHealthCheck,
+  LifecycleHooks,
   ProfileConfig,
   SnowDevConfig,
   TaskConfig,
@@ -82,14 +84,41 @@ function profile(value: unknown, path: string): ProfileConfig {
     host: input.host === undefined ? undefined : host(input.host, `${path}.host`),
   };
 }
+function func(value: unknown, path: string): Hook {
+  if (typeof value !== "function")
+    throw new SnowDevError("E_CONFIG_INVALID", `${path} must be a function.`);
+  return value as Hook;
+}
+const lifecycleHookKeys = ["beforeRun", "afterDependenciesReady", "beforeDown"] as const;
+function hooks(value: unknown, path: string): LifecycleHooks {
+  const input = record(value, path);
+  const known = new Set<string>([...lifecycleHookKeys, "task"]);
+  for (const key of Object.keys(input))
+    if (!known.has(key))
+      throw new SnowDevError("E_CONFIG_INVALID", `${path}.${key} is not a supported hook.`);
+  const result: LifecycleHooks = {};
+  for (const key of lifecycleHookKeys)
+    if (input[key] !== undefined) result[key] = func(input[key], `${path}.${key}`);
+  if (input.task !== undefined)
+    result.task = Object.fromEntries(
+      Object.entries(record(input.task, `${path}.task`)).map(([name, item]) => [
+        string(name, "task hook name"),
+        func(item, `${path}.task.${name}`),
+      ]),
+    );
+  return result;
+}
 function task(value: unknown, path: string): TaskConfig {
   const input = record(value, path);
-  if (typeof input.isolated !== "boolean")
-    throw new SnowDevError("E_CONFIG_INVALID", `${path}.isolated must be a boolean.`);
+  if (input.isolated !== true)
+    throw new SnowDevError(
+      "E_CONFIG_INVALID",
+      `${path}.isolated must be true; Compose tasks always run in an isolated project.`,
+    );
   return {
     profile: string(input.profile, `${path}.profile`),
     services: strings(input.services, `${path}.services`),
-    isolated: input.isolated,
+    isolated: true,
   };
 }
 /** Validates an untyped MJS default export and returns the typed configuration. */
@@ -123,6 +152,14 @@ export function validateConfig(value: unknown): SnowDevConfig {
             string(item, `config.env.${key}`),
           ]),
         );
+  const configuredHooks =
+    input.hooks === undefined ? undefined : hooks(input.hooks, "config.hooks");
+  for (const name of Object.keys(configuredHooks?.task ?? {}))
+    if (tasks && name in tasks)
+      throw new SnowDevError(
+        "E_CONFIG_INVALID",
+        `config.hooks.task.${name} collides with config.tasks.${name}.`,
+      );
   return {
     id: string(input.id, "config.id"),
     compose: {
@@ -132,5 +169,6 @@ export function validateConfig(value: unknown): SnowDevConfig {
     profiles,
     tasks,
     env,
+    hooks: configuredHooks,
   };
 }
