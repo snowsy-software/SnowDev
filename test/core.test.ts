@@ -9,6 +9,7 @@ import { validateConfig } from "../src/schema/config.js";
 import { runDoctor } from "../src/commands/doctor.js";
 import { loadConfig } from "../src/core/config.js";
 import { formatCommand } from "../src/core/log.js";
+import { needsWindowsShell } from "../src/core/spawnCompat.js";
 
 const fixtures = resolve(dirname(fileURLToPath(import.meta.url)), "fixtures");
 
@@ -114,6 +115,22 @@ describe("command logging", () => {
         args: ["--token", "hidden", "API_KEY=also-hidden", "Authorization: Bearer hidden", "safe"],
       }),
     ).toBe('tool --token [REDACTED] API_KEY=[REDACTED] "Authorization: [REDACTED]" safe');
+  });
+});
+
+describe("Windows shell compatibility", () => {
+  const onWindows = process.platform === "win32";
+
+  it("routes .cmd and .bat commands through a shell only on Windows", () => {
+    expect(needsWindowsShell("mvnw.cmd")).toBe(onWindows);
+    expect(needsWindowsShell("gradlew.BAT")).toBe(onWindows);
+  });
+
+  it("never shells out for real executables or extension-less commands", () => {
+    expect(needsWindowsShell("mvn")).toBe(false);
+    expect(needsWindowsShell("node")).toBe(false);
+    expect(needsWindowsShell("docker.exe")).toBe(false);
+    expect(needsWindowsShell("./scripts/build.sh")).toBe(false);
   });
 });
 
