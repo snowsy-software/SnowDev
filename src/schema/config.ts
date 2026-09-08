@@ -48,6 +48,7 @@ function task(value: unknown, path: string): TaskConfig {
     isolated: input.isolated,
   };
 }
+/** Validates an untyped MJS default export and returns the typed configuration. */
 export function validateConfig(value: unknown): SnowDevConfig {
   const input = record(value, "config");
   const compose = record(input.compose, "config.compose");

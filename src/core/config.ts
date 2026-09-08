@@ -5,6 +5,7 @@ import { validateConfig } from "../schema/config.js";
 import type { SnowDevConfig } from "../types/config.js";
 import { SnowDevError } from "./errors.js";
 
+/** Finds the mandatory `snowdev.config.mjs` in a project's working directory. */
 export async function findConfig(cwd: string): Promise<string> {
   const file = resolve(cwd, "snowdev.config.mjs");
   try {
@@ -15,6 +16,7 @@ export async function findConfig(cwd: string): Promise<string> {
   return file;
 }
 
+/** Loads, validates, and returns a project's MJS configuration and resolved path. */
 export async function loadConfig(cwd: string): Promise<{ path: string; config: SnowDevConfig }> {
   const path = await findConfig(cwd);
   let loaded: { default?: unknown };

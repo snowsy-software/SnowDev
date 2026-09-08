@@ -3,11 +3,13 @@ import { resolve } from "node:path";
 import { loadConfig } from "../core/config.js";
 import { composeCommand } from "../core/compose.js";
 import { runProcess, type ProcessRunner } from "../core/process.js";
+/** One diagnostic emitted by the `snowdev doctor` command. */
 export interface DoctorCheck {
   name: string;
   ok: boolean;
   message: string;
 }
+/** Aggregated diagnostic status returned by `snowdev doctor`. */
 export interface DoctorResult {
   ok: boolean;
   checks: DoctorCheck[];
@@ -16,6 +18,7 @@ function nodeSupported(version: string): boolean {
   const [major, minor] = version.replace(/^v/, "").split(".").map(Number);
   return major > 20 || (major === 20 && minor >= 19);
 }
+/** Checks the local toolchain and the configuration required to run a project. */
 export async function runDoctor(
   cwd: string,
   runner: ProcessRunner = runProcess,

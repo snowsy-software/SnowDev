@@ -6,12 +6,14 @@ import { SnowDevError, formatError } from "./core/errors.js";
 const packageName = "@snowdev/cli";
 const version = process.env.npm_package_version ?? "0.0.0";
 
+/** Prints the command help shown when no command is supplied. */
 function printUsage(): void {
   console.log(`${packageName} ${version}`);
   console.log("\nUsage: snowdev <command>");
   console.log("\nCommands:\n  doctor  Check Node, Docker, Compose, and project configuration");
 }
 
+/** Parses top-level CLI arguments and dispatches the implemented command. */
 async function main(argv: readonly string[]): Promise<void> {
   const [command, ...args] = argv;
   if (command === undefined || command === "--help" || command === "-h") return printUsage();

@@ -1,6 +1,7 @@
 import type { ComposeConfig } from "../types/config.js";
 import { SnowDevError } from "./errors.js";
 
+/** A command represented as an executable and already-separated arguments. */
 export interface CommandSpec {
   command: string;
   args: string[];
@@ -10,6 +11,7 @@ function argument(value: string, name: string): string {
     throw new SnowDevError("E_COMPOSE_ARGUMENT", `${name} must be a non-empty safe string.`);
   return value;
 }
+/** Builds a shell-free `docker compose` invocation with explicit isolation arguments. */
 export function composeCommand(
   compose: ComposeConfig,
   profile: string,

@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { SnowDevError } from "./errors.js";
 
+/** Parses a restricted dotenv file without interpolation or shell evaluation. */
 export function parseEnv(contents: string, source = ".env"): Record<string, string> {
   const values: Record<string, string> = {};
   for (const [index, raw] of contents
@@ -30,6 +31,11 @@ async function optionalEnv(path: string): Promise<Record<string, string>> {
     throw error;
   }
 }
+/**
+ * Merges environment files using SnowDev's fixed precedence.
+ *
+ * Process variables override profile-local, local, profile, base, and configured defaults.
+ */
 export async function loadEnvironment(
   cwd: string,
   profile: string,
@@ -44,6 +50,7 @@ export async function loadEnvironment(
   return { ...defaults, ...loaded[0], ...loaded[1], ...loaded[2], ...loaded[3], ...processEnv };
 }
 const secretKey = /(token|password|passwd|secret|api[-_]?key|authorization)/i;
+/** Returns an environment object safe to include in command logs. */
 export function redactEnvironment(
   values: Record<string, string | undefined>,
 ): Record<string, string | undefined> {

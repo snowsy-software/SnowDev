@@ -1,3 +1,4 @@
+/** An expected SnowDev failure with a stable, machine-readable error code. */
 export class SnowDevError extends Error {
   public constructor(
     public readonly code: string,
@@ -9,6 +10,7 @@ export class SnowDevError extends Error {
   }
 }
 
+/** Converts any thrown value into the single error format used by the CLI. */
 export function formatError(error: unknown): string {
   if (error instanceof SnowDevError) return `snowdev: error [${error.code}]: ${error.message}`;
   if (error instanceof Error) return `snowdev: error [E_UNEXPECTED]: ${error.message}`;
