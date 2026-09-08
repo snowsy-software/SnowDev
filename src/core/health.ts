@@ -26,7 +26,7 @@ export async function waitForHttp(
   const timeoutMs = check.timeoutMs ?? 60_000;
   const intervalMs = check.intervalMs ?? 1_000;
   const deadline = now() + timeoutMs;
-  let lastReason = "no attempt completed";
+  let lastReason: string;
   for (let attempt = 1; ; attempt += 1) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), intervalMs);
@@ -102,7 +102,7 @@ export async function waitForComposeHealthy(
   const intervalMs = options.intervalMs ?? 1_000;
   const deadline = now() + timeoutMs;
   const spec = composeCommand(compose, profile, ["ps", "--format", "json"], options.compose);
-  let lastReport = "no status yet";
+  let lastReport: string;
   for (;;) {
     const result = await runner(spec, { cwd: options.cwd, capture: true });
     if (result.exitCode === 0) {
