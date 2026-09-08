@@ -185,11 +185,11 @@ snowdev/
 
 ### Phase 0：仓库建立与开源基线
 
-- [ ] 创建公开 GitHub 仓库 `snowdev`。
-- [ ] 添加 Apache-2.0 的 `LICENSE`、`NOTICE`、贡献指南、行为准则与安全报告说明。
-- [ ] 建立 TypeScript ESM 工程、Node 版本策略、Prettier、ESLint、Vitest。
-- [ ] 配置 `npm pack --dry-run` 检查，确保不会发布源环境文件或无关资源。
-- [ ] 确定 npm scope；若 `@snowdev` 不可用，选择不包含内部品牌的公开 scope。
+- [ ] 创建公开 GitHub 仓库 `snowdev`。（按当前要求保持私有，直到公开 npm 包获准发布。）
+- [x] 添加 Apache-2.0 的 `LICENSE`、`NOTICE`、贡献指南、行为准则与安全报告说明。
+- [x] 建立 TypeScript ESM 工程、Node 版本策略、Prettier、ESLint、Vitest。
+- [x] 配置 `npm pack --dry-run` 检查，确保不会发布源环境文件或无关资源。
+- [ ] 确定 npm scope；若 `@snowdev` 不可用，选择不包含内部品牌的公开 scope。（`@snowdev/cli` 当前仅为预发布占位，须由已认证 npm 维护者在首发前确认所有权与可用性。）
 
 验收：空 CLI 可运行，`npm pack --dry-run` 内容受控，开源元信息完整。
 
@@ -260,4 +260,3 @@ snowdev/
 4. **npm 包而非 git subtree/submodule。** 以版本边界保证 core 不被消费仓库随意修改，也能明确地升级和回滚。
 5. **Compose 保留在业务仓库。** 业务基础设施差异太大；SnowDev 只编排，不生成拓扑。
 6. **安全优先于旧行为兼容。** 隐式数据重置和 production/staging 的隐式 `down` 不进入新命令契约。
-
