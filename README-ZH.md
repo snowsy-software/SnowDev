@@ -26,12 +26,14 @@ node dist/cli.js --help
 ```bash
 npm run typecheck
 npm run lint
-npm run format:check
+npx prettier --check .
 npm test
 npm run pack:check
 ```
 
 `pack:check` 会执行 `npm pack --dry-run`。发布文件白名单定义在 `package.json` 中；源码、测试、仓库文档、环境文件和 CI 配置均不得进入 npm tarball。
+
+使用 `npx prettier --write .` 格式化文件。使用 `npx npm-check-updates` 检查可用的依赖更新但不改写文件；在审核通过后，可执行 `npx npm-check-updates -u`，然后执行 `npm install` 应用更新。
 
 ## 发布状态
 

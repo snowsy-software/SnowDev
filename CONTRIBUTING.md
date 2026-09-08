@@ -9,7 +9,7 @@ Use Node.js 20.19.0 or newer, then run `npm install`. Before proposing a change,
 ```bash
 npm run typecheck
 npm run lint
-npm run format:check
+npx prettier --check .
 npm test
 npm run pack:check
 ```

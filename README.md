@@ -26,12 +26,14 @@ Quality checks:
 ```bash
 npm run typecheck
 npm run lint
-npm run format:check
+npx prettier --check .
 npm test
 npm run pack:check
 ```
 
 `pack:check` runs `npm pack --dry-run`. The package allowlist is defined in `package.json`; source, tests, repository docs, environment files, and CI configuration must not enter the npm tarball.
+
+Format files with `npx prettier --write .`. Check available dependency updates without changing files with `npx npm-check-updates`; apply approved updates with `npx npm-check-updates -u` followed by `npm install`.
 
 ## Publication status
 

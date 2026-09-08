@@ -249,7 +249,7 @@ snowdev/
 - 单元测试：参数解析、schema、环境优先级、脱敏、命令构造、安全拦截。
 - 集成测试：使用 fixture Compose 文件和 mock Docker 二进制验证完整生命周期，不依赖真实业务项目。
 - 兼容性：至少覆盖 Windows PowerShell、Linux shell、Node 当前 LTS 与一个前代 LTS。
-- 发布前：`typecheck`、lint、单测、集成测试、`npm pack --dry-run` 全部通过。
+- 发布前：`typecheck`、lint、`npx prettier --check .`、单测、集成测试、`npm pack --dry-run` 全部通过。
 - 文档：每个公开命令提供输入、行为、退出码和危险操作说明。
 
 ## 7. 关键决策记录

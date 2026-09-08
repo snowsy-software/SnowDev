@@ -29,7 +29,7 @@ Run these from a clean checkout:
 npm ci
 npm run typecheck
 npm run lint
-npm run format:check
+npx prettier --check .
 npm test
 npm run pack:check
 ```
