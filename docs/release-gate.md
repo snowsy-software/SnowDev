@@ -1,29 +1,10 @@
-# Public release gate
+# GitHub 私有包发布门禁
 
-The repository must remain private until the first approved public npm package release. This document is a release checklist, not authorization to publish.
+本仓库和 `@snowsy-software/snowdev` 均为私有资产。包只能发布到 GitHub Packages，禁止发布到 npmjs.com。
 
-## Before making the repository public
+## 发布前检查
 
-1. Obtain maintainer approval for the repository visibility change and npm publication.
-2. Review all history, documentation, examples, test fixtures, and generated files for credentials, internal branding, hostnames, ports, Docker assets, customer data, or other non-public material.
-3. Confirm `LICENSE`, `NOTICE`, `README.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and `SECURITY.md` are correct for public use.
-4. Enable a public security-reporting route and configure repository governance settings.
-
-## npm identity decision
-
-`@snowdev/cli` is a pre-release placeholder. A maintainer authenticated to npm must verify the scope is owned and eligible for public publication immediately before the first release:
-
-```bash
-npm whoami
-npm access ls-packages @snowdev
-npm view @snowdev/cli version
-```
-
-If `@snowdev` cannot be owned and used publicly, select a new public scope that does not contain internal or customer branding, update `package.json`, documentation, and package metadata together, then repeat the packaging review. Do not publish an unscoped or alternative name without maintainer approval.
-
-## Package gate
-
-Run these from a clean checkout:
+从干净工作区执行：
 
 ```bash
 npm ci
@@ -34,6 +15,12 @@ npm test
 npm run pack:check
 ```
 
-Inspect the `npm pack --dry-run` file list. It may contain only the compiled distribution, package metadata, README, LICENSE, NOTICE, required templates, and type declarations. It must not contain source, tests, `.env` files, secrets, repository-specific Docker assets, or unrelated documents.
+审阅 `npm pack --dry-run` 的文件列表。它只能包含编译产物、包元数据、中文 README、必要模板和类型声明；不得包含源代码、测试、`.env` 文件、令牌、私有文档、业务 Docker 资产或 CI 配置。
 
-Only after all checks pass and explicit approval is recorded may the release owner create a release and run the approved public publication process.
+## 发布流程
+
+1. 确认 `package.json` 的版本已更新，且 `name` 为 `@snowsy-software/snowdev`。
+2. 确认 `publishConfig.registry` 是 `https://npm.pkg.github.com`，不得临时改为 npmjs.com。
+3. 在 GitHub Actions 手动运行“发布私有包”工作流，并输入 `PUBLISH` 明确确认。
+4. 工作流以仓库短期 `GITHUB_TOKEN` 发布；不在 Actions secret 或仓库文件中保存个人访问令牌。
+5. 发布后，使用有读取权限的独立消费者项目安装该精确版本进行验证。

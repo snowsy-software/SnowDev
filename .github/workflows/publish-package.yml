@@ -1,0 +1,34 @@
+name: 发布私有包
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_publish:
+        description: 输入 PUBLISH 以确认发布当前 package.json 中的版本
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    if: inputs.confirm_publish == 'PUBLISH'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20.19.0
+          registry-url: https://npm.pkg.github.com
+          scope: "@snowsy-software"
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npx prettier --check .
+      - run: npm test
+      - run: npm run pack:check
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
