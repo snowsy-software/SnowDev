@@ -6,7 +6,7 @@ SnowDev is a Node.js command-line tool for orchestrating repeatable local develo
 
 ## Status
 
-This is the private, pre-release repository. It is intentionally not yet published to npm or made public. The current `0.0.0` CLI is a Phase 0 packaging baseline only; workflow commands are not implemented.
+This is the private, pre-release repository. It is intentionally not yet published to npm or made public. The current `0.0.0` CLI provides Phase 1 foundations, including `doctor`; lifecycle commands remain planned work.
 
 ## Requirements
 
@@ -30,6 +30,10 @@ npx prettier --check .
 npm test
 npm run pack:check
 ```
+
+## Documentation
+
+Start with the [documentation map](docs/README.md). It links the architecture, engineering, configuration and command, security, testing, and local-development standards. Contributors and AI collaborators must also follow [AGENTS.md](AGENTS.md).
 
 `pack:check` runs `npm pack --dry-run`. The package allowlist is defined in `package.json`; source, tests, repository docs, environment files, and CI configuration must not enter the npm tarball.
 
