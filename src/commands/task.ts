@@ -46,13 +46,10 @@ export async function task(options: TaskOptions): Promise<number> {
     `task ${options.name}: Compose project "${plan.projectName}"${plan.isolated ? " (isolated)" : ""}`,
   );
 
-  logCommand(plan.up, log);
-  const started = await runner(plan.up, { cwd: options.cwd, env, stdio: "inherit" });
-  if (started.exitCode !== 0) {
-    await teardown();
-    return started.exitCode;
-  }
   try {
+    logCommand(plan.up, log);
+    const started = await runner(plan.up, { cwd: options.cwd, env, stdio: "inherit" });
+    if (started.exitCode !== 0) return started.exitCode;
     logCommand(plan.run, log);
     const result = await runner(plan.run, { cwd: options.cwd, env, stdio: "inherit" });
     return result.exitCode;

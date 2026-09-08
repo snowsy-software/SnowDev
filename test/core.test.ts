@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { composeCommand } from "../src/core/compose.js";
 import { loadEnvironment, parseEnv, redactEnvironment } from "../src/core/env.js";
 import { validateConfig } from "../src/schema/config.js";
 import { runDoctor } from "../src/commands/doctor.js";
 import { loadConfig } from "../src/core/config.js";
+import { formatCommand } from "../src/core/log.js";
 
 const fixtures = resolve(dirname(fileURLToPath(import.meta.url)), "fixtures");
 
@@ -70,22 +73,47 @@ describe("configuration schema", () => {
 
 describe("environment loading", () => {
   it("uses the documented precedence and redacts secret values", async () => {
-    const env = await loadEnvironment(
-      resolve(fixtures, "environment"),
-      "dev",
-      { VALUE: "default" },
-      { VALUE: "process", PROCESS_ONLY: "yes" },
-    );
-    expect(env.VALUE).toBe("process");
-    expect(env.PROFILE_LOCAL).toBe("profile-local");
-    expect(parseEnv("export NAME=value # note\nQUOTED='hello world'\n")).toEqual({
-      NAME: "value",
-      QUOTED: "hello world",
-    });
-    expect(redactEnvironment({ API_TOKEN: "secret", NAME: "visible" })).toEqual({
-      API_TOKEN: "[REDACTED]",
-      NAME: "visible",
-    });
+    const cwd = await mkdtemp(resolve(tmpdir(), "snowdev-env-"));
+    try {
+      await Promise.all([
+        writeFile(resolve(cwd, ".env"), "VALUE=base\n"),
+        writeFile(resolve(cwd, ".env.dev"), "VALUE=profile\n"),
+        writeFile(resolve(cwd, ".env.local"), "VALUE=local\n"),
+        writeFile(
+          resolve(cwd, ".env.dev.local"),
+          "VALUE=profile-local\nPROFILE_LOCAL=profile-local\n",
+        ),
+      ]);
+      const env = await loadEnvironment(
+        cwd,
+        "dev",
+        { VALUE: "default" },
+        { VALUE: "process", PROCESS_ONLY: "yes" },
+      );
+      expect(env.VALUE).toBe("process");
+      expect(env.PROFILE_LOCAL).toBe("profile-local");
+      expect(parseEnv("export NAME=value # note\nQUOTED='hello world'\n")).toEqual({
+        NAME: "value",
+        QUOTED: "hello world",
+      });
+      expect(redactEnvironment({ API_TOKEN: "secret", NAME: "visible" })).toEqual({
+        API_TOKEN: "[REDACTED]",
+        NAME: "visible",
+      });
+    } finally {
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("command logging", () => {
+  it("redacts secret values while retaining safe arguments", () => {
+    expect(
+      formatCommand({
+        command: "tool",
+        args: ["--token", "hidden", "API_KEY=also-hidden", "Authorization: Bearer hidden", "safe"],
+      }),
+    ).toBe('tool --token [REDACTED] API_KEY=[REDACTED] "Authorization: [REDACTED]" safe');
   });
 });
 

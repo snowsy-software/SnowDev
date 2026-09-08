@@ -100,7 +100,7 @@ export async function run(options: RunOptions): Promise<number> {
       );
     const key = `${config.compose.projectName}-${options.profileKey}`;
     if (foreground) {
-      log(`$ ${[profile.host.command, ...(profile.host.args ?? [])].join(" ")}`);
+      logCommand({ command: profile.host.command, args: profile.host.args ?? [] }, log);
       const hostResult = await runHostForeground(profile.host, {
         cwd: options.cwd,
         env,

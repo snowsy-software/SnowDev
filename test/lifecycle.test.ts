@@ -192,6 +192,22 @@ describe("isolated task lifecycle", () => {
       "down",
     ]);
   });
+
+  it("cleans up when the bring-up runner throws", async () => {
+    const calls: CommandSpec[] = [];
+    const runner = vi.fn(async (spec: CommandSpec): Promise<ProcessResult> => {
+      calls.push(spec);
+      if (spec.args.includes("up")) throw new Error("docker unavailable");
+      return { exitCode: 0 };
+    });
+    await expect(
+      task({ cwd: composeService, name: "test", runner, log: () => {} }),
+    ).rejects.toThrow("docker unavailable");
+    expect(calls.map((spec) => spec.args.find((arg) => ["up", "down"].includes(arg)))).toEqual([
+      "up",
+      "down",
+    ]);
+  });
 });
 
 describe("health waiting", () => {
