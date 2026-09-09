@@ -67,15 +67,13 @@ export async function run(options: RunOptions): Promise<number> {
 
   // compose-service / host-app deps: exactly one bring-up command. Foreground
   // compose services stay attached and their exit code is the command's result;
-  // every other case brings containers up quietly and continues to health/host.
+  // every other case detaches (`up -d`) and continues to health/host. Either way
+  // the child inherits stdio so Docker's build, image-pull, and container-creation
+  // output — and any failure messages — reach the terminal.
   const [bringUp] = specs;
   const attach = foreground && profile.kind === "compose-service";
   logCommand(bringUp, log);
-  const brought = await runner(bringUp, {
-    cwd: options.cwd,
-    env,
-    stdio: attach ? "inherit" : "ignore",
-  });
+  const brought = await runner(bringUp, { cwd: options.cwd, env, stdio: "inherit" });
   if (attach || brought.exitCode !== 0) return brought.exitCode;
 
   await waitForComposeHealthy(config.compose, options.profileKey, profile.services, {
@@ -114,7 +112,10 @@ export async function run(options: RunOptions): Promise<number> {
       env,
       deps: options.hostDeps,
     });
-    log(`Host process started (pid ${record.pid}); state in .snowdev/${key}.host.json`);
+    log(
+      `Host process started (pid ${record.pid}); state in .snowdev/${key}.host.json` +
+        (record.logFile ? `, output in ${record.logFile}` : ""),
+    );
   }
 
   return 0;

@@ -304,6 +304,34 @@ describe("host process lifecycle", () => {
     }
   });
 
+  it("routes detached host output to a per-key log file and records its path", async () => {
+    const dir = await mkdtemp(resolve(tmpdir(), "snowdev-host-"));
+    try {
+      const captured: unknown[] = [];
+      const deps = {
+        spawn: ((_cmd: string, _args: string[], opts: { stdio?: unknown }) => {
+          captured.push(opts.stdio);
+          return { pid: 900, unref() {} };
+        }) as never,
+        kill: () => false,
+        sleep: async () => {},
+      };
+      const record = await startHostBackground(
+        { command: "node", args: ["server.js"] },
+        { cwd: dir, key: "svc-stag", deps },
+      );
+      expect(record.logFile).toBe(".snowdev/svc-stag.host.log");
+      expect(captured[0]).toEqual(["ignore", expect.any(Number), expect.any(Number)]);
+      const logged = await readFile(resolve(dir, ".snowdev/svc-stag.host.log"), "utf8");
+      expect(logged).toContain("snowdev start: node server.js");
+      await expect(
+        readFile(resolve(dir, ".snowdev/svc-stag.host.json"), "utf8"),
+      ).resolves.toContain(".snowdev/svc-stag.host.log");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it("refuses to start a second host process while one is alive", async () => {
     const dir = await mkdtemp(resolve(tmpdir(), "snowdev-host-"));
     try {

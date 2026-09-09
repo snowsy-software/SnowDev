@@ -27,7 +27,8 @@ export async function ps(options: PsOptions): Promise<number> {
     const status = await hostStatus({ cwd: options.cwd, key, deps: options.hostDeps });
     log(
       status.record
-        ? `host process ${key}: ${status.running ? "running" : "stopped"} (pid ${status.record.pid})`
+        ? `host process ${key}: ${status.running ? "running" : "stopped"} (pid ${status.record.pid})` +
+            (status.record.logFile ? `; output in ${status.record.logFile}` : "")
         : `host process ${key}: not started`,
     );
   }

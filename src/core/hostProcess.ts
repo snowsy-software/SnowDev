@@ -1,4 +1,5 @@
 import { spawn, type SpawnOptions } from "node:child_process";
+import { closeSync, openSync, writeSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import type { HostProcessConfig } from "../types/config.js";
@@ -14,6 +15,8 @@ export interface HostProcessRecord {
   command: string;
   args: string[];
   startedAt: string;
+  /** Path (relative to the project) of the file this process's output is appended to. */
+  logFile?: string;
 }
 /** Result of inspecting a stored host process record. */
 export interface HostProcessStatus {
@@ -44,6 +47,10 @@ const defaultDeps: HostProcessDeps = {
 
 function recordPath(cwd: string, key: string): string {
   return resolve(cwd, stateDir, `${key}.host.json`);
+}
+/** Project-relative path of the file a background host process appends its output to. */
+export function hostLogPath(key: string): string {
+  return `${stateDir}/${key}.host.log`;
 }
 async function readRecord(cwd: string, key: string): Promise<HostProcessRecord | undefined> {
   try {
@@ -99,26 +106,46 @@ export async function startHostBackground(
       "E_HOST_ALREADY_RUNNING",
       `A host process for "${options.key}" is already running (pid ${existing.pid}).`,
     );
-  const child = deps.spawn(host.command, host.args ?? [], {
-    cwd: options.cwd,
-    env: options.env,
-    shell: needsWindowsShell(host.command),
-    stdio: "ignore",
-    detached: true,
-    windowsHide: true,
-  });
-  child.unref();
-  if (typeof child.pid !== "number")
-    throw new SnowDevError("E_HOST_SPAWN", `Host process for "${options.key}" did not start.`);
-  const record: HostProcessRecord = {
-    pid: child.pid,
-    command: host.command,
-    args: host.args ?? [],
-    startedAt: new Date().toISOString(),
-  };
+  // The child is detached and outlives this CLI process, so its stdout/stderr
+  // cannot stay on our terminal. Append both to a per-key log file the user can
+  // `tail` (its path is reported by `run` and `ps`); fall back to discarding
+  // output only if the file cannot be opened.
   await mkdir(resolve(options.cwd, stateDir), { recursive: true });
-  await writeFile(recordPath(options.cwd, options.key), `${JSON.stringify(record, null, 2)}\n`);
-  return record;
+  const logFile = hostLogPath(options.key);
+  let logFd: number | undefined;
+  try {
+    logFd = openSync(resolve(options.cwd, logFile), "a");
+    writeSync(
+      logFd,
+      `\n--- ${new Date().toISOString()} snowdev start: ${host.command} ${(host.args ?? []).join(" ")}\n`,
+    );
+  } catch {
+    logFd = undefined;
+  }
+  try {
+    const child = deps.spawn(host.command, host.args ?? [], {
+      cwd: options.cwd,
+      env: options.env,
+      shell: needsWindowsShell(host.command),
+      stdio: logFd === undefined ? "ignore" : ["ignore", logFd, logFd],
+      detached: true,
+      windowsHide: true,
+    });
+    child.unref();
+    if (typeof child.pid !== "number")
+      throw new SnowDevError("E_HOST_SPAWN", `Host process for "${options.key}" did not start.`);
+    const record: HostProcessRecord = {
+      pid: child.pid,
+      command: host.command,
+      args: host.args ?? [],
+      startedAt: new Date().toISOString(),
+      ...(logFd === undefined ? {} : { logFile }),
+    };
+    await writeFile(recordPath(options.cwd, options.key), `${JSON.stringify(record, null, 2)}\n`);
+    return record;
+  } finally {
+    if (logFd !== undefined) closeSync(logFd);
+  }
 }
 
 /** Reports whether the recorded host process for a key is still alive. */
