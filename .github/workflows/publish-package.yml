@@ -1,4 +1,4 @@
-name: 发布私有包
+name: 发布 npm 公共包
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ on:
 
 permissions:
   contents: read
-  packages: write
+  id-token: write
 
 jobs:
   publish:
@@ -21,8 +21,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 20.19.0
-          registry-url: https://npm.pkg.github.com
-          scope: "@snowsy-software"
+          registry-url: https://registry.npmjs.org
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
@@ -30,5 +29,3 @@ jobs:
       - run: npm test
       - run: npm run pack:check
       - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
