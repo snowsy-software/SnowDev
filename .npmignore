@@ -1,6 +1,5 @@
 # Publication is controlled by package.json#files. This provides defense in depth
 # for tooling that does not honor that allowlist.
-src/
 test/
 tests/
 docs/
